@@ -83,6 +83,22 @@ class WakingCheckStage(Stage):
         self,
         event: AstrMessageEvent,
     ) -> None | AsyncGenerator[None, None]:
+        if event.get_extra("_context_only") is True:
+            # Native adapters can retain context without running commands or models.
+            event.is_wake = False
+            event.is_at_or_wake_command = False
+            event.set_extra("handlers_parsed_params", {})
+            event.set_extra(
+                "activated_handlers",
+                [
+                    handler
+                    for handler in star_handlers_registry.get_handlers_by_event_type(
+                        EventType.AdapterMessageEvent
+                    )
+                    if handler.extras_configs.get("context_only", False)
+                ],
+            )
+            return
         # apply unique session
         event.set_extra("_session_isolated", False)
         if self.unique_session and event.message_obj.type == MessageType.GROUP_MESSAGE:

@@ -53,19 +53,43 @@ export type BotConfigRequest = {
      */
     type: string;
     enabled?: boolean;
+    /**
+     * Wangshangliao supports reply_private (boolean, default true) and reply_groups (group ID to boolean map, omitted entries default true). Group replies still require mentions.
+     */
     config: DynamicConfig;
 };
 
 export type BotRegistrationRequest = {
-    action: 'start' | 'poll';
+    instance_id?: string;
+    account?: string;
+    password?: string;
+    validate_str?: string;
+    verification_code?: string;
+    action: 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close';
+    sender_instance?: string;
+    groups?: Array<(string)>;
+    scopes?: Array<('private_commands' | 'group_commands' | 'group_rules')>;
+    keywords?: Array<(string)>;
+    seconds?: number;
+    budget?: number;
+    operation_action?: 'mute' | 'unmute' | 'mute_all' | 'unmute_all' | 'announce';
+    group?: number;
+    member?: number;
+    text?: string;
+    /**
+     * Single-use confirmation bound to the dashboard user and login session; expires after ten minutes.
+     */
+    approval_token?: string;
     platform_config?: DynamicConfig;
     registration_code?: string;
     device_code?: string;
     qrcode?: string;
-    [key: string]: unknown | string | DynamicConfig;
+    [key: string]: unknown | string | number | DynamicConfig;
 };
 
-export type action = 'start' | 'poll';
+export type action = 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close';
+
+export type operation_action = 'mute' | 'unmute' | 'mute_all' | 'unmute_all' | 'announce';
 
 /**
  * Per-request ChatUI feature flags. A value here takes priority over its legacy top-level field, followed by the documented default.
@@ -297,6 +321,10 @@ export type GhproxyTestRequest = {
 };
 
 export type ImMessageRequest = {
+    /**
+     * Stable operation identity on supported platforms.
+     */
+    operation_id?: string;
     umo: string;
     message: (string | Array<MessagePart>);
 };
@@ -3722,3 +3750,18 @@ export type ReceivePlatformWebhookData = {
 export type ReceivePlatformWebhookResponse = (unknown);
 
 export type ReceivePlatformWebhookError = unknown;
+
+export type GetImOperationData = {
+    path: {
+        operation_id: string;
+    };
+    query: {
+        platform_id: string;
+    };
+};
+
+export type GetImOperationResponse = ({
+    [key: string]: unknown;
+});
+
+export type GetImOperationError = unknown;
