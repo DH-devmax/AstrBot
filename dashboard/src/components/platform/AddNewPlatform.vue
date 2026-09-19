@@ -9,10 +9,10 @@
       <v-card-title class="text-h3 pa-4 pb-0 pl-6">
         {{
           updatingMode
-            ? `${tm('dialog.edit')} ${updatingPlatformConfig.id} ${tm(
-                'dialog.adapter',
+            ? `${tm("dialog.edit")} ${updatingPlatformConfig.id} ${tm(
+                "dialog.adapter",
               )}`
-            : tm('dialog.addPlatform')
+            : tm("dialog.addPlatform")
         }}
       </v-card-title>
       <v-card-text
@@ -73,7 +73,9 @@
                         activator="parent"
                         :text="
                           tm(
-                            `createDialog.platformTooltips.${platformTemplates[item.raw].type}`,
+                            `createDialog.platformTooltips.${
+                              platformTemplates[item.raw].type
+                            }`,
                           )
                         "
                         location="end"
@@ -279,6 +281,10 @@
                     </div>
                   </div>
 
+                  <WangshangliaoLogin
+                    v-else-if="selectedPlatformConfig?.type === 'wangshangliao'"
+                    v-model="selectedPlatformConfig"
+                  />
                   <div
                     v-else-if="isWeixinOcPlatform"
                     class="registration-inline mt-4"
@@ -734,7 +740,9 @@
 
       <v-card-actions>
         <v-spacer></v-spacer>
-        <v-btn variant="text" @click="closeDialog">{{ tm("dialog.cancel") }}</v-btn>
+        <v-btn variant="text" @click="closeDialog">{{
+          tm("dialog.cancel")
+        }}</v-btn>
         <v-btn
           :disabled="!canSave"
           color="primary"
@@ -850,7 +858,13 @@
 </template>
 
 <script>
-import { botApi, configProfileApi, configRouteApi, fileApi, sessionApi } from "@/api/v1";
+import {
+  botApi,
+  configProfileApi,
+  configRouteApi,
+  fileApi,
+  sessionApi,
+} from "@/api/v1";
 import { useModuleI18n } from "@/i18n/composables";
 import {
   getPlatformIcon,
@@ -860,12 +874,14 @@ import {
 import AstrBotConfig from "@/components/shared/AstrBotConfig.vue";
 import AstrBotCoreConfigWrapper from "@/components/config/AstrBotCoreConfigWrapper.vue";
 import ConfigPage from "@/views/ConfigPage.vue";
+import WangshangliaoLogin from "./WangshangliaoLogin.vue";
 import PlatformRegistrationAction from "@/components/platform/PlatformRegistrationAction.vue";
 import UmoDisplay from "@/components/shared/UmoDisplay.vue";
 
 export default {
   name: "AddNewPlatform",
   components: {
+    WangshangliaoLogin,
     AstrBotConfig,
     AstrBotCoreConfigWrapper,
     ConfigPage,
@@ -969,6 +985,11 @@ export default {
       );
     },
     canSave() {
+      if (
+        this.selectedPlatformConfig?.type === "wangshangliao" &&
+        !this.selectedPlatformConfig?.session_ref
+      )
+        return false;
       // 基本条件：必须选择平台类型
       if (!this.selectedPlatformType) {
         return false;
@@ -1588,7 +1609,9 @@ export default {
       }
 
       let suffix = "";
-      const explicitSuffix = this.sanitizePlatformIdPart(data.platform_id_suffix);
+      const explicitSuffix = this.sanitizePlatformIdPart(
+        data.platform_id_suffix,
+      );
       if (explicitSuffix) {
         suffix =
           explicitSuffix.startsWith("_") || explicitSuffix.startsWith("-")

@@ -218,8 +218,12 @@ class OpenApiChatRequest(OpenModel):
 
 
 class ImMessageRequest(OpenModel):
+    operation_id: str | None = Field(default=None, min_length=1, max_length=256)
     umo: str | None = None
-    message: Any = None
+    message: Any = Field(
+        default=None,
+        description='Message text or ordered parts. IM mentions use {"type":"at","qq":"business-account-id","name":"display-name"}; name is optional. Broadcast mentions are not supported. Target validation is platform-specific.',
+    )
     type: str | None = None
 
 
@@ -457,6 +461,11 @@ class BotConfigRequest(OpenModel):
 
 
 class BotRegistrationRequest(OpenModel):
+    instance_id: str | None = None
+    account: str | None = None
+    password: str | None = None
+    validate_str: str | None = None
+    verification_code: str | None = None
     action: Literal["start", "poll"] | str | None = None
     platform_config: dict[str, Any] | None = None
     registration_code: str | None = None

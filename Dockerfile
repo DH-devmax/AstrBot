@@ -23,12 +23,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY . /AstrBot/
 
+ARG INSTALL_WSL=false
 RUN python -m pip install uv \
     && echo "3.12" > .python-version \
     && uv lock \
     && uv export --format requirements.txt --output-file requirements.txt --frozen \
     && uv pip install -r requirements.txt --no-cache-dir --system \
-    && uv pip install socksio uv pilk --no-cache-dir --system
+    && uv pip install socksio uv pilk --no-cache-dir --system \
+    && if [ "$INSTALL_WSL" = "true" ]; then uv export --extra wsl --format requirements.txt --output-file /tmp/wsl-requirements.txt --frozen && uv pip install -r /tmp/wsl-requirements.txt --no-cache-dir --system && rm /tmp/wsl-requirements.txt; fi
 
 EXPOSE 6185
 

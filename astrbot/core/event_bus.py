@@ -12,6 +12,7 @@ class:
 
 import asyncio
 from asyncio import Queue
+from functools import partial
 
 from astrbot.core import logger
 from astrbot.core.astrbot_config_mgr import AstrBotConfigManager
@@ -39,6 +40,9 @@ class EventBus:
     async def dispatch(self) -> None:
         while True:
             event: AstrMessageEvent = await self.event_queue.get()
+            completion = getattr(event, "processing_completion", None)
+            if isinstance(completion, asyncio.Future) and completion.cancelled():
+                continue
             conf_info = self.astrbot_config_mgr.get_conf_info(event.unified_msg_origin)
             conf_id = conf_info["id"]
             conf_name = conf_info.get("name") or conf_id
@@ -48,14 +52,30 @@ class EventBus:
                 logger.error(
                     f"PipelineScheduler not found for id: {conf_id}, event ignored."
                 )
+                if isinstance(completion, asyncio.Future) and not completion.done():
+                    completion.set_exception(RuntimeError("pipeline_missing"))
                 continue
             task = asyncio.create_task(scheduler.execute(event))
             self._pending_tasks.add(task)
-            task.add_done_callback(self._on_task_done)
+            task.add_done_callback(partial(self._on_task_done, completion=completion))
+            if isinstance(completion, asyncio.Future):
+                event.processing_task = task
+                completion.add_done_callback(
+                    lambda future, task=task: (
+                        task.cancel() if future.cancelled() else None
+                    )
+                )
 
-    def _on_task_done(self, task: asyncio.Task) -> None:
+    def _on_task_done(self, task: asyncio.Task, completion=None) -> None:
         """pipeline 任务结束回调: 移除强引用并暴露未捕获的异常"""
         self._pending_tasks.discard(task)
+        if isinstance(completion, asyncio.Future) and not completion.done():
+            if task.cancelled():
+                completion.cancel()
+            elif task.exception() is not None:
+                completion.set_exception(task.exception())
+            else:
+                completion.set_result(None)
         if task.cancelled():
             return
         exc = task.exception()
