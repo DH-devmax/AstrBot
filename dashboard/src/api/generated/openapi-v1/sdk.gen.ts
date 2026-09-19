@@ -3167,6 +3167,9 @@ export const receivePlatformWebhook = <ThrowOnError extends boolean = false>(opt
     });
 };
 
+/**
+ * Query a durable message operation result
+ */
 export const getImOperation = <ThrowOnError extends boolean = false>(options: OptionsLegacyParser<GetImOperationData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetImOperationResponse, GetImOperationError, ThrowOnError>({
         ...options,

@@ -5109,7 +5109,9 @@ paths:
   /api/v1/im/operations/{operation_id}:
     get:
       operationId: getImOperation
-      tags: [Open API]
+      tags: [IM]
+      summary: Query a durable message operation result
+      x-astrbot-scope: im
       parameters:
         - name: operation_id
           in: path
