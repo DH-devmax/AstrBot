@@ -85,6 +85,39 @@ def _build_context() -> MagicMock:
 
 
 @pytest.mark.asyncio
+async def test_command_registration_retries_failure_and_preserves_menu():
+    adapter = _load_telegram_adapter()(
+        make_platform_config("telegram"), {}, asyncio.Queue()
+    )
+    adapter.collect_commands = MagicMock(
+        return_value=[SimpleNamespace(command="start", description="Start")]
+    )
+    adapter.client.set_my_commands = AsyncMock(
+        side_effect=[RuntimeError("offline"), None]
+    )
+    adapter.client.delete_my_commands = AsyncMock()
+    original_hash = adapter.last_command_hash
+
+    await adapter.register_commands()
+    assert adapter.last_command_hash == original_hash
+    await adapter.register_commands()
+    await adapter.register_commands()
+
+    assert adapter.client.set_my_commands.await_count == 2
+    adapter.client.delete_my_commands.assert_not_awaited()
+
+
+def test_command_menu_always_contains_start(monkeypatch):
+    module = _load_telegram_module("astrbot.core.platform.sources.telegram.tg_adapter")
+    monkeypatch.setattr(module, "star_handlers_registry", [])
+    monkeypatch.setattr(module, "BotCommand", lambda cmd, desc: (cmd, desc))
+    adapter = module.TelegramPlatformAdapter(
+        make_platform_config("telegram"), {}, asyncio.Queue()
+    )
+    assert adapter.collect_commands() == [("start", "开始使用机器人")]
+
+
+@pytest.mark.asyncio
 async def test_telegram_topic_with_missing_name_falls_back_to_group_name():
     TelegramPlatformAdapter = _load_telegram_adapter()
     adapter = TelegramPlatformAdapter(

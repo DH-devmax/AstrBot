@@ -340,16 +340,15 @@ class TelegramPlatformAdapter(Platform):
                 )
                 if current_hash == self.last_command_hash:
                     return
-                self.last_command_hash = current_hash
-                await self.client.delete_my_commands()
                 await self.client.set_my_commands(commands)
+                self.last_command_hash = current_hash
 
         except Exception as e:
-            logger.error(f"向 Telegram 注册指令时发生错误: {e!s}")
+            logger.error("Telegram command registration failed: %s", type(e).__name__)
 
     def collect_commands(self) -> list[BotCommand]:
         """从注册的处理器中收集所有指令"""
-        command_dict = {}
+        command_dict = {"start": "开始使用机器人"}
         skip_commands = {"start"}
 
         for handler_md in star_handlers_registry:
@@ -413,8 +412,25 @@ class TelegramPlatformAdapter(Platform):
 
             # Build description.
             description = handler_metadata.desc or (
-                f"Command group: {cmd_name}" if is_group else f"Command: {cmd_name}"
+                f"命令组：{cmd_name}" if is_group else f"命令：{cmd_name}"
             )
+            if (
+                handler_metadata.handler_module_path
+                == "astrbot.builtin_stars.builtin_commands.main"
+            ):
+                description = {
+                    "help": "查看帮助与可用命令",
+                    "sid": "查看当前会话编号及相关信息",
+                    "name": "设置当前会话的显示名称",
+                    "reset": "开始新对话，保留历史记录",
+                    "new": "开始新对话，保留历史记录",
+                    "stop": "停止当前任务",
+                    "stats": "查看当前对话的用量统计",
+                    "provider": "查看或切换模型提供商",
+                    "dashboard_update": "更新管理面板",
+                    "set": "设置会话变量",
+                    "unset": "删除会话变量",
+                }.get(getattr(event_filter, "command_name", ""), description)
             if len(description) > 30:
                 description = description[:30] + "..."
             result.append((cmd_name, description))
