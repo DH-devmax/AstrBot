@@ -65,3 +65,6 @@ GenieData/
 .worktrees/
 
 dashboard/bun.lock
+
+# Local browser diagnostics
+.playwright-cli/

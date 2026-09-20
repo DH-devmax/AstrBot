@@ -1,6 +1,10 @@
 
 # Connecting to Telegram
 
+## Command Menu
+
+The menu includes `/start` and valid Telegram commands from enabled plugins. Built-in commands have Chinese descriptions. Visibility does not grant permission; AstrBot still checks authorization. Failed updates preserve the previous menu and are retried on subsequent registration. The Wangshangliao moderation plugin does not manage Telegram groups.
+
 ## Supported Message Types
 
 > Version v4.15.0.

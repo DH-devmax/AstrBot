@@ -153,6 +153,7 @@ export default {
       this.eventSource = new EventSourcePolyfill(logApi.liveUrl(), {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
+          ...(this.lastEventId ? { "Last-Event-ID": this.lastEventId } : {}),
         },
         heartbeatTimeout: 300000,
         withCredentials: true,
@@ -298,7 +299,7 @@ export default {
     },
 
     isHiddenByCategory(log) {
-      return this.hideUserChat && log && log.category === "user_chat";
+      return this.hideUserChat && log && ["user_chat", "unknown"].includes(log.category);
     },
 
     refreshDisplay() {
