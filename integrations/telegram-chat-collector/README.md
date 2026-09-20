@@ -211,4 +211,8 @@ AstrBot 资料导出到 `astrbot-restore/`：通过后台恢复 Telegram 平台�
 
 ## 专属插件架构与管理文档
 
-完整的系统架构、功能权限、Telethon 开发流程、工作群发现与选择、原消息分页、配置职责和发送状态机见 [插件 README](../AstrBot/data/plugins/astrbot_plugin_tgwatch/README.md)。采集账号入群与官方机器人入群是两个独立流程；选择工作群后需要显式启用榜单。
+完整的系统架构、功能权限、Telethon 开发流程、工作群发现与选择、原消息分页、配置职责和发送状态机见 [插件 README](../../data/plugins/astrbot_plugin_tgwatch/README.md)。采集账号入群与官方机器人入群是两个独立流程；选择工作群后需要显式启用榜单。
+
+## 仓库源码与部署目录
+
+本目录是采集服务的版本化源码，不包含运行配置和用户会话。部署时复制到 AstrBot 仓库旁的 `telegram-chat-collector` 独立目录，再按本文登录运行；不要复制生产 `var/` 或真实 `config.json` 到 Git。GitHub Actions 的 Telegram Watch 工作流分别运行采集服务与插件测试，并发布仅含源码的安装包。

@@ -193,7 +193,7 @@ API 中需要访问 Telegram 的操作通过服务客户端执行，相关 RPC �
 | GET/PUT `link_rules` | 人员正则规则 |
 | GET `violations` | 按游标扫描违规链接 |
 
-鉴权错误 401、参数错误 400、上游或存储不可用 503；不可用不是零数据。完整参数、运行和备份命令见 [采集服务文档](../../../../telegram-chat-collector/README.md)。
+鉴权错误 401、参数错误 400、上游或存储不可用 503；不可用不是零数据。完整参数、运行和备份命令见 [采集服务文档](../../../../integrations/telegram-chat-collector/README.md)。
 
 ## 配置与从零部署
 

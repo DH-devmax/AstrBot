@@ -39,7 +39,7 @@ jobs:
           export ZHIPU_API_KEY=${{ secrets.OPENAI_API_KEY }}
           # Live logging swaps stdout while pip tests redirect it for classification.
           # Keep captured debug logs available on failure without changing stdout.
-          pytest --cov=astrbot -v -o log_cli=false -o log_level=DEBUG
+          pytest tests --cov=astrbot -v -o log_cli=false -o log_level=DEBUG
 
       - name: Upload results to Codecov
         if: github.repository == 'AstrBotDevs/AstrBot'
