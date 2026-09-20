@@ -42,10 +42,12 @@ def test_markdown_plain_text():
 
 @pytest.mark.asyncio
 async def test_scoped_prompt_and_components():
-    req = SimpleNamespace(system_prompt="Original persona")
+    req = SimpleNamespace(system_prompt="Original persona", func_tool=None)
     mention = At(qq="123")
     result = SimpleNamespace(chain=[mention, Plain("**回答**")], is_llm_result=lambda: True, use_t2i=Mock())
-    event = SimpleNamespace(get_platform_name=lambda: "wangshangliao", get_result=lambda: result)
+    event = SimpleNamespace(get_platform_name=lambda: "wangshangliao", get_result=lambda: result,
+                            get_extra=lambda _: None, is_private_chat=lambda: True, is_admin=lambda: False,
+                            platform=SimpleNamespace(config={"id": "test"}))
     await Main.plain_text_request(None, event, req)
     await Main.plain_text_request(None, event, req)
     assert req.system_prompt.startswith("Original persona")

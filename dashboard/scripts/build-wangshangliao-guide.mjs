@@ -5,6 +5,10 @@ import MarkdownIt from 'markdown-it';
 const markdown = new MarkdownIt({ html: false, linkify: false });
 const output = fileURLToPath(new URL('../public/local-docs/', import.meta.url));
 mkdirSync(output, { recursive: true });
+mkdirSync(`${output}images`, { recursive: true });
+copyFileSync(new URL('../../docs/zh/platform/images/wangshangliao-directory-labels.jpg', import.meta.url), `${output}images/wangshangliao-directory-labels.jpg`);
+copyFileSync(new URL('../../docs/zh/platform/images/wangshangliao-group-labels.jpg', import.meta.url), `${output}images/wangshangliao-group-labels.jpg`);
+copyFileSync(new URL('../../docs/zh/platform/images/wangshangliao-cards-narrow.jpg', import.meta.url), `${output}images/wangshangliao-cards-narrow.jpg`);
 copyFileSync(new URL('../../docs/public/images/wangshangliao/architecture.svg', import.meta.url), `${output}architecture.svg`);
 copyFileSync(new URL('../../docs/public/images/wangshangliao/architecture-layers.svg', import.meta.url), `${output}architecture-layers.svg`);
 for (const language of ['zh', 'en']) {

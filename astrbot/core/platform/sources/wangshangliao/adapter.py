@@ -774,9 +774,119 @@ class WangshangliaoAdapter(Platform):
             ),
         )
 
+    async def rename_member(
+        self,
+        operation: str,
+        group: int,
+        member: int,
+        name: str,
+        expected_card: str,
+        expected_nim: str,
+        *,
+        authorize=None,
+    ) -> dict:
+        """Rename one verified ordinary member using a frozen preview.
+
+        Args:
+            operation: Stable persisted operation ID.
+            group: Enabled business group ID.
+            member: Verified business member ID.
+            name: Proposed group card.
+            expected_card: Card captured during preview.
+            expected_nim: Transport identity captured during preview.
+            authorize: Optional job cancellation and lifecycle check.
+
+        Returns:
+            Persisted accepted, verified or unknown outcome.
+
+        Raises:
+            ProtocolError: If the preview, lifecycle or authorization changed.
+        """
+        from .moderation import execute
+        from .policy import authorize_action
+
+        account, business = self.account, self.business
+
+        def check():
+            if (
+                self.stopping.is_set()
+                or self.connection_state != "online"
+                or self.account != account
+                or self.business is not business
+            ):
+                raise wire.ProtocolError("not_online")
+            authorize_action(self.config, str(group), "rename")
+            if authorize is not None:
+                authorize()
+
+        async with self.send_lock:
+            check()
+            return await execute(
+                business,
+                self.config["id"],
+                account,
+                operation,
+                "rename",
+                group,
+                member,
+                name,
+                authorize=check,
+                expected_card=expected_card,
+                expected_nim=expected_nim,
+            )
+
     async def mute_member(self, operation: str, group: int, member: int) -> dict:
         """Execute the fixed mute capability."""
         return await self.execute_moderation(operation, "mute", group, member=member)
+
+    async def cleanup_member(
+        self, operation, group, member, expected_nim, *, authorize=None
+    ):
+        """Remove a currently banned or cancelled ordinary member.
+
+        Args:
+            operation: Persisted operation ID.
+            group: Explicitly authorized group ID.
+            member: Previewed business member ID.
+            expected_nim: Previewed transport identity.
+            authorize: Job cancellation check invoked immediately before mutation.
+
+        Returns:
+            Persisted platform outcome, with readback when available.
+
+        Raises:
+            ProtocolError: If authorization, identity or lifecycle changed.
+        """
+        from .moderation import execute
+        from .policy import authorize_action
+
+        account, business = self.account, self.business
+
+        def check():
+            if (
+                self.stopping.is_set()
+                or self.connection_state != "online"
+                or self.account != account
+                or self.business is not business
+            ):
+                raise wire.ProtocolError("not_online")
+            authorize_action(self.config, str(group), "cleanup")
+            if authorize is not None:
+                authorize()
+
+        async with self.send_lock:
+            check()
+            return await execute(
+                business,
+                self.config["id"],
+                account,
+                operation,
+                "cleanup",
+                group,
+                member,
+                authorize=check,
+                expected_nim=expected_nim,
+            )
 
     async def unmute_member(self, operation: str, group: int, member: int) -> dict:
         """Execute the fixed unmute capability."""

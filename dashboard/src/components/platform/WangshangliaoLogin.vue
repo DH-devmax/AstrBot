@@ -194,8 +194,9 @@
         }}
       </p>
     </div>
-    <WangshangliaoPermissions :model-value="modelValue" @update:model-value="emit('update:modelValue', $event)" />
-    <WangshangliaoTestWindow v-if="existing" :instance="modelValue.id" :enabled-groups="modelValue.enabled_groups || []" :draft="modelValue.developer_test" @update:draft="emit('update:modelValue', { ...modelValue, developer_test: $event })" />
+    <WangshangliaoPermissions :model-value="modelValue" :groups="enabledGroupOptions" @update:model-value="emit('update:modelValue', $event)" />
+    <WangshangliaoCards v-if="existing" :instance="modelValue.id" :groups="enabledGroupOptions" />
+    <WangshangliaoTestWindow v-if="existing" :instance="modelValue.id" :enabled-groups="modelValue.enabled_groups || []" :group-options="enabledGroupOptions" :draft="modelValue.developer_test" @update:draft="emit('update:modelValue', { ...modelValue, developer_test: $event })" />
     <div v-if="existing" class="d-flex flex-column ga-3">
       <v-divider />
       <v-switch
@@ -237,13 +238,14 @@ import { onBeforeRouteLeave } from 'vue-router';
 import { useI18n } from "@/i18n/composables";
 import { botApi } from "@/api/v1";
 import WangshangliaoPermissions from './WangshangliaoPermissions.vue';
+import WangshangliaoCards from './WangshangliaoCards.vue';
 import WangshangliaoTestWindow from './WangshangliaoTestWindow.vue';
 
 const props = defineProps<{
   modelValue: Record<string, any>;
   existing?: boolean;
 }>();
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(["update:modelValue", "group-directory"]);
 const { locale } = useI18n();
 const label = (zh: string, en: string) =>
   locale.value.startsWith("zh") ? zh : en;
@@ -350,6 +352,11 @@ const groupOptions = computed(() => {
     .filter((id: string) => !known.has(id))
     .map((id: string) => ({ id, name: id }))];
 });
+const enabledGroupOptions = computed(() => groupOptions.value
+  .filter(group => (props.modelValue.enabled_groups || []).includes(group.id))
+  .map(group => ({ id: group.id, name: group.name === group.id
+    ? `${label('群名待加载', 'Group name unavailable')} (${group.id})`
+    : `${group.name} (${group.id})` })));
 onMounted(() => { if (props.existing) void loadGroups(); });
 const loadingGroups = ref(false);
 const groupError = ref(false);
@@ -416,6 +423,10 @@ async function loadGroups() {
   try {
     const result = await request("groups");
     if (mounted && current === generation) {
+      emit("group-directory", {
+        instance: props.modelValue.id,
+        names: Object.fromEntries(result.groups.map((group: any) => [String(group.id), group.name])),
+      });
       groups.value = result.groups.map((group: any) => ({
         ...group,
         name: `${group.name} · ${label(

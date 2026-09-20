@@ -60,20 +60,37 @@ export type BotConfigRequest = {
 };
 
 export type BotRegistrationRequest = {
+    cleanup_limit?: number;
+    cleanup_state?: 'ACCOUNT_STATE_BAN' | 'ACCOUNT_STATUS_CANCELLED';
+    /**
+     * Single ordinary member business ID for a Dashboard card preview.
+     */
+    card_member?: (string) | null;
+    /**
+     * Explicit card paired with card_member, including restoration of the original name.
+     */
+    card_name?: (string) | null;
+    /**
+     * Server-created caller-bound card preview ID for execute, stop or status.
+     */
+    card_job_id?: (string) | null;
+    /**
+     * Enabled business group ID for card preview.
+     */
+    group?: ((string | number) | null);
     instance_id?: string;
     account?: string;
     password?: string;
     validate_str?: string;
     verification_code?: string;
-    action: 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close';
+    action: 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close' | 'card_preview' | 'cleanup_preview' | 'card_execute' | 'card_status' | 'card_stop';
     sender_instance?: string;
     groups?: Array<(string)>;
-    scopes?: Array<('private_commands' | 'group_commands' | 'group_rules')>;
+    scopes?: Array<('private_commands' | 'private_ai' | 'group_commands' | 'group_rules')>;
     keywords?: Array<(string)>;
     seconds?: number;
     budget?: number;
     operation_action?: 'mute' | 'unmute' | 'mute_all' | 'unmute_all' | 'announce';
-    group?: number;
     member?: number;
     text?: string;
     /**
@@ -84,10 +101,12 @@ export type BotRegistrationRequest = {
     registration_code?: string;
     device_code?: string;
     qrcode?: string;
-    [key: string]: unknown | string | number | DynamicConfig;
+    [key: string]: unknown | number | string | DynamicConfig;
 };
 
-export type action = 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close';
+export type cleanup_state = 'ACCOUNT_STATE_BAN' | 'ACCOUNT_STATUS_CANCELLED';
+
+export type action = 'start' | 'poll' | 'login' | 'request_sms' | 'verify_sms' | 'resend_sms' | 'cancel' | 'logout' | 'groups' | 'moderation_preview' | 'moderation_execute' | 'test_status' | 'test_open' | 'test_close' | 'card_preview' | 'cleanup_preview' | 'card_execute' | 'card_status' | 'card_stop';
 
 export type operation_action = 'mute' | 'unmute' | 'mute_all' | 'unmute_all' | 'announce';
 

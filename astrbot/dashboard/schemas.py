@@ -461,6 +461,25 @@ class BotConfigRequest(OpenModel):
 
 
 class BotRegistrationRequest(OpenModel):
+    card_member: str | None = Field(
+        default=None,
+        description="Single ordinary member business ID for a Dashboard card preview.",
+    )
+    card_name: str | None = Field(
+        default=None,
+        description="Explicit name for the single-member card preview; paired with card_member.",
+    )
+    cleanup_limit: int | None = Field(default=None, ge=1, le=1000)
+    cleanup_state: Literal["ACCOUNT_STATE_BAN", "ACCOUNT_STATUS_CANCELLED"] | None = (
+        None
+    )
+    card_job_id: str | None = Field(
+        default=None,
+        description="Server-created card preview ID for execute, stop or status; caller and login bound.",
+    )
+    group: str | int | None = Field(
+        default=None, description="Enabled business group ID for card preview."
+    )
     instance_id: str | None = None
     account: str | None = None
     password: str | None = None

@@ -78,6 +78,7 @@ dependencies = [
   "lz4==4.4.4",
   "zstandard==0.25.0",
   "protobuf==6.33.6",
+  "regex>=2024.11.6",
 ]
 
 [project.optional-dependencies]

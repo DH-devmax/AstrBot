@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1040" viewBox="0 0 900 1040" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1230" viewBox="0 0 900 1230" role="img" aria-labelledby="title desc">
 <title id="title">旺商聊与 AstrBot 职责及授权架构</title><desc id="desc">核心提供机制，插件决定业务，接入器执行平台操作。插件查询固定能力接口，接入器执行前核验目标授权；开发门禁统一为实例窗口。</desc>
 <defs><marker id="a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8" fill="#536373"/></marker></defs>
 <style>text{font-family:system-ui,'PingFang SC','Microsoft YaHei',sans-serif;fill:#202830;letter-spacing:0;font-size:19px}.h{font-size:25px;font-weight:700}.s{font-size:17px;fill:#536373}.arrow{stroke:#536373;stroke-width:2;marker-end:url(#a)}</style>
-<rect width="900" height="1040" fill="white"/>
+<rect width="900" height="1230" fill="white"/>
 <text x="30" y="42" class="h">旺商聊 × AstrBot / Responsibility Map</text>
 <text x="30" y="75">通用机制归核心 · 业务决策归插件 · 平台执行归接入器</text>
 <rect x="30" y="100" width="840" height="125" rx="6" fill="#edf5ff" stroke="#8ab4e8"/>
@@ -13,7 +13,7 @@
 <rect x="30" y="260" width="840" height="130" rx="6" fill="#eff8f1" stroke="#8cba96"/>
 <text x="50" y="295" class="h">② 旺商聊群管插件 / Plugin</text>
 <text x="50" y="329">已实现：关键词、首次 @ 警告、24 小时计数、冷却、处罚决策</text>
-<text x="50" y="362">管理命令：私聊群列表、禁言、解禁、踢出、公告（待实测）</text>
+<text x="50" y="362">私聊命令与 AI 工具、名片预览和串行任务；自动任务不调用模型</text>
 <path d="M450 391V415" class="arrow"/>
 <rect x="30" y="425" width="840" height="140" rx="6" fill="#f4f5f7" stroke="#a9b1bc"/>
 <text x="50" y="460" class="h">③ 旺商聊原生接入器 / Adapter</text>
@@ -33,4 +33,10 @@
 <path d="M30 952H870" stroke="#cbd2da"/>
 <text x="30" y="981" class="s">管理员列表：谁能控制；/platforms：机器人能做什么。聊天不能自行授权。</text>
 <text x="30" y="1012" class="s">accepted ≠ 对端确认；目录、主动发送、媒体、长期稳定性仍有验收缺口。</text>
+<path d="M30 1034H870" stroke="#cbd2da"/>
+<text x="30" y="1070" class="h">C. 群名片规范 / Card Normalization</text>
+<text x="50" y="1105">逐群显式授权 → 完整目录 → 插件预览 → 新指令确认执行</text>
+<text x="50" y="1137">或：逐群自动开关 → 五分钟目录扫描 → 持久化串行队列</text>
+<text x="50" y="1169">接入器复核身份、原名及权限 → 固定改名接口 → 完整目录回读</text>
+<text x="50" y="1201" class="s">排除机器人和管理成员；未知不重发；真实改名回读与对端确认待验收。</text>
 </svg>

@@ -67,7 +67,7 @@
     <p v-if="!loading && draft.type === 'wangshangliao'" class="text-caption text-medium-emphasis px-6 my-2" style="flex: 0 0 auto" role="status">
       {{ isModified ? '有未保存更改，请点击保存更改。' : '配置已保存' }}
     </p>
-    <p v-for="(state, group) in runtimeStat?.group_directory_state || {}" :key="group" class="text-caption px-6 my-1">{{ group }} · {{ state.complete ? "目录完整 / Complete" : "目录不可用 / Unavailable" }} {{ state.error || "" }}</p>
+    <p v-for="(state, group) in runtimeStat?.group_directory_state || {}" :key="group" class="text-caption px-6 my-1" style="overflow-wrap: anywhere">{{ groupDirectoryNames[draft.id]?.[group] || "群名待加载" }}（{{ group }}）· {{ state.complete ? "目录完整 / Complete" : "目录不可用 / Unavailable" }} {{ state.error || "" }}</p>
     <v-divider />
 
     <div v-if="loading" class="bot-editor__loading">
@@ -99,6 +99,7 @@
           v-if="draft.type === 'wangshangliao'"
           :key="draft.id"
           v-model="draft"
+          @group-directory="directory => groupDirectoryNames[directory.instance] = directory.names"
           existing
         />
         <AstrBotConfig
@@ -427,6 +428,7 @@ const emit = defineEmits([
 const { tm } = useModuleI18n("features/platform");
 
 const draft = ref({});
+const groupDirectoryNames = ref({});
 const originalPlatformId = ref("");
 const initialConfigSnapshot = ref("");
 const initialRouteSnapshot = ref("");

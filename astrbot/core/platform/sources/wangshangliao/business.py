@@ -155,6 +155,7 @@ class BusinessClient:
             "/v1/group/get-group-list",
             "/v1/group/get-group-members",
             "/v1/group/set-member-mute",
+            "/v1/group/set-member-nickname",
             "/v1/group/remove-group-member",
             "/v1/group/member-mute-cancel",
             "/v1/group/set-group-mute",

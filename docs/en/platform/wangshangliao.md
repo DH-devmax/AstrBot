@@ -1,5 +1,11 @@
 # Wangshangliao (native Python)
 
+## Private natural-language management (live acceptance pending)
+
+AstrBot administrators can ask a tool-capable model to list groups, search members, and mute, unmute, remove members, publish announcements, or toggle group muting. The plugin must be enabled. This management tool is unavailable to ordinary users, group conversations, and other platforms.
+
+Flow: private message → AstrBot administrator check → fixed plugin tool → directory snapshot → shared command service → adapter authorization and native role checks → durable result → redacted plain-text reply. Selections expire after ten minutes. Ambiguous names require clarification. Chat cannot change grants. Accepted is not confirmed; unknown outcomes are queried rather than retried. Recall remains available only through automatic violation rules.
+
 ## Conversations and logs
 
 Untitled Wangshangliao conversations use their session alias/name, or the private account/group ID, as a list display fallback. Existing titles are preserved and no additional model request is made. Trace reconnections carry the last cursor to replay retained entries. When AstrBot file logging and trace file logging are enabled, history recovers entries from the current files after restart. It reads at most 4 MiB and 1,000 entries per file, returning at most 2,000 merged entries. Older rotated files are not loaded by this endpoint. Traces are not a complete message archive. Lists, details and exports use consistent display titles; search also matches session aliases.
@@ -214,3 +220,58 @@ Formatted and redacted replies are split into segments of at most 4096 UTF-8 byt
 Unknown members trigger bounded complete-roster refreshes. A failed group does not block other groups or private chat. Failed warnings are attempted before punishment on a later violation; unknown warnings neither trigger blind retries nor count as successful warnings. Legacy environment overrides were removed; development uses instance-bound test windows only.
 
 ![Proactive target authorization](/images/wangshangliao/permissions-mobile.png)
+
+## Group card normalization (single-member rename and restoration verified)
+
+On 2026-09-20, a saved temporary grant was used in the designated test group to rename one ordinary member from `D1` to `名片测试` and restore `D1`. Complete roster readback verified both operations, and the temporary grant was restored. Mobile observation, join-triggered automation and whole-batch normalization remain unverified.
+
+The authenticated Dashboard `card_preview` action accepts paired `card_member` and `card_name` fields for a single-member rename or restoration preview. Protected members remain excluded and execution uses a server-bound preview. Private AI tools do not accept arbitrary names or member lists.
+
+Under Platforms → bot → moderation capabilities, select a group by name, grant card renaming, and save. Reply switches, proactive targets, grants, card jobs and test groups share the directory labels, displaying names and IDs while persisting IDs. An unavailable name is explicitly labeled and the saved selection is preserved.
+
+![Group names in saved grants](images/wangshangliao-group-labels.jpg)
+
+Directory status at the top also displays group names and IDs. Names come from the directory and completeness from the running instance; completeness does not grant permission to perform actions.
+
+![Directory status group names](images/wangshangliao-directory-labels.jpg)
+Automatic normalization is separately opt-in per group. Complete rosters are checked every five minutes without model calls.
+Banned and cancelled accounts are excluded, with another check before each write. An uncertain operation whose target is subsequently confirmed banned or cancelled retains its unknown outcome and quarantines that member. New jobs may process other members but never retry the quarantined target, even after account recovery.
+Acquiring an administrator role does not authorize a new group. Self, configured bots, group owners and administrators are excluded.
+
+The same page provides Preview, Execute preview, Refresh progress and Stop pending items. Previews expire after ten minutes and are bound to the login and Dashboard caller.
+Names changed since preview are not overwritten. Unknown or accepted-but-unverified writes stop further work; uncertain operations are read back rather than resent after restart.
+Automatically processed members are not repeatedly overwritten after a manual rename. A new manual preview is required.
+
+Current group cards take precedence over account nicknames. Two Unicode grapheme clusters are retained without splitting combining characters or Emoji.
+Short names receive a persisted `大海群员` plus six random digits, checked against the complete directory. Two-character duplicates are allowed.
+
+Private administrators use `card_preview`, `card_execute`, `card_status` and `card_stop` through `wsl_private_management`.
+Enable that tool in the persona allowlist. Select a verified group, request an explicit batch preview, then send a new instruction to execute its server-generated ID.
+Models cannot supply arbitrary target lists, identities, authorization changes or protocol paths. Group chat retains only the existing six structured mention commands.
+Queries, negations, conditions and quoted instructions do not authorize mutations. Program guards and real-model semantic tests are separate acceptance layers.
+
+```mermaid
+flowchart TD
+  A[Dashboard per-group grants] --> D[Adapter final authorization and lifecycle checks]
+  B[Administrator private AI request] --> C[Plugin directory selection and server preview]
+  C --> E[New explicit user instruction]
+  E --> F[Plugin persisted serial queue, at least one second between writes]
+  G[Complete roster polling every five minutes, no model] --> F
+  A --> G
+  F --> D
+  D --> H[Fixed set-member-nickname capability]
+  H --> I[Directory readback and operation ledger]
+  I --> J[Accepted / verified / rejected / unknown]
+```
+
+Configured bot accounts remain protected even when their test role is ordinary. Developer message windows do not bypass card target protection. Live acceptance must never rename the entire production group as a test.
+
+![390px card preview](images/wangshangliao-cards-narrow.jpg)
+
+## Banned and cancelled account cleanup
+
+The former “Batch group card normalization” section is now “Batch member actions”. Select cleanup, save its independent per-group action permission, preview the targets, check the confirmation and execute. This removes members from the group; it does not delete platform accounts. It is disabled by default and never runs automatically.
+
+Only explicit platform account states qualify, never nicknames. Owners, administrators and connected bots are excluded. Every removal revalidates account state, identity and authorization. Recovered accounts are skipped. Tasks are serialized and stoppable; uncertain results pause for readback without blind retries. Restarted cleanup tasks do not resume automatically.
+
+![Batch member actions](./images/wangshangliao-cleanup-narrow.jpg)

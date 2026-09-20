@@ -7,7 +7,8 @@ from collections.abc import Callable
 
 from .business import BusinessClient
 from .diagnostics import Diagnostics
-from .directory import member_directory
+from .directory import member_card, member_directory
+from .event import is_managed_account
 from .storage import instance_dir
 from .wire import ProtocolError
 
@@ -23,6 +24,8 @@ async def execute(
     text: str = "",
     *,
     authorize: Callable[[], None] | None = None,
+    expected_card: str | None = None,
+    expected_nim: str | None = None,
 ) -> dict:
     """Execute a human-confirmed action once and retain ambiguous outcomes.
 
@@ -34,7 +37,9 @@ async def execute(
         action: Fixed moderation action name.
         group: Positive business group ID.
         member: Member ID for member actions.
-        text: Announcement content.
+        text: Announcement content or new group card.
+        expected_card: Exact previewed group card, required for rename.
+        expected_nim: Verified preview transport identity, required for rename.
         authorize: Revalidate current local authorization after remote lookups.
 
     Returns:
@@ -48,6 +53,8 @@ async def execute(
     if str(client.fields[3]) != account:
         raise ProtocolError("moderation_identity")
     routes = {
+        "cleanup": ("/v1/group/remove-group-member", {"groupMemberIds": [member]}),
+        "rename": ("/v1/group/set-member-nickname", {"userId": member, "nick": text}),
         "kick": ("/v1/group/remove-group-member", {"groupMemberIds": [member]}),
         "mute": ("/v1/group/set-member-mute", {"userId": member, "min": 1}),
         "unmute": ("/v1/group/member-mute-cancel", {"userId": member}),
@@ -59,16 +66,27 @@ async def execute(
         ),
     }
     if action not in routes or (
-        action in {"mute", "unmute", "kick"}
+        action in {"mute", "unmute", "kick", "rename", "cleanup"}
         and (type(member) is not int or member <= 0)
     ):
         raise ProtocolError("moderation_arguments")
     if action == "announce" and (not text.strip() or len(text) > 2000):
         raise ProtocolError("moderation_arguments")
+    if action == "rename" and (
+        not text.strip()
+        or len(text.encode()) > 256
+        or expected_card is None
+        or not expected_nim
+        or str(member) == account
+        or is_managed_account(str(member))
+    ):
+        raise ProtocolError("moderation_target")
     route, params = routes[action]
     params = {"groupId": group, **params}
     digest = hashlib.sha256(
-        json.dumps([account, route, params], sort_keys=True).encode()
+        json.dumps(
+            [account, route, params, expected_card, expected_nim], sort_keys=True
+        ).encode()
     ).hexdigest()
     root = instance_dir(instance)
     root.mkdir(parents=True, exist_ok=True)
@@ -95,7 +113,7 @@ async def execute(
     role = (target or {}).get("me", {}).get("role")
     if role not in {"GROUP_ROLE_OWNER", "GROUP_ROLE_ADMIN"}:
         raise ProtocolError("moderation_permission")
-    if action in {"mute", "unmute", "kick"}:
+    if action in {"mute", "unmute", "kick", "rename", "cleanup"}:
         page = await member_directory(client, str(group))
         matches = [
             m
@@ -108,6 +126,24 @@ async def execute(
             or not matches[0].get("nimId")
         ):
             raise ProtocolError("moderation_target")
+        if action == "cleanup" and (
+            matches[0].get("accountState")
+            not in {"ACCOUNT_STATE_BAN", "ACCOUNT_STATUS_CANCELLED"}
+            or str(matches[0]["nimId"]) != expected_nim
+            or str(member) == account
+            or is_managed_account(str(member))
+        ):
+            raise ProtocolError("cleanup_target_changed")
+        if action == "rename" and matches[0].get("accountState") in {
+            "ACCOUNT_STATE_BAN",
+            "ACCOUNT_STATUS_CANCELLED",
+        }:
+            raise ProtocolError("card_account_unavailable")
+        if action == "rename" and (
+            str(matches[0]["nimId"]) != expected_nim
+            or member_card(matches[0]) != expected_card
+        ):
+            raise ProtocolError("card_preview_stale")
     if authorize is not None:
         authorize()
     result = {
@@ -128,6 +164,23 @@ async def execute(
     try:
         receipt = await client.request(route, params)
         result["status"] = "accepted"
+        if action == "cleanup":
+            roster = await member_directory(client, str(group))
+            if not any(
+                str(m["userId"]) == str(member) for m in roster["groupMemberInfo"]
+            ):
+                result["status"] = "verified"
+        if action == "rename":
+            roster = await member_directory(client, str(group))
+            current = [
+                m for m in roster["groupMemberInfo"] if str(m["userId"]) == str(member)
+            ]
+            if (
+                len(current) == 1
+                and str(current[0]["nimId"]) == expected_nim
+                and member_card(current[0]) == text
+            ):
+                result["status"] = "verified"
         if action == "announce":
             notice_id = str(receipt.get("noticeId", receipt.get("id", "")))
             notices = await client.request(

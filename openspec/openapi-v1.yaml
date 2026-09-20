@@ -5551,6 +5551,32 @@ components:
       type: object
       required: [action]
       properties:
+        cleanup_limit:
+          type: integer
+          minimum: 1
+          maximum: 1000
+        cleanup_state:
+          type: string
+          enum: [ACCOUNT_STATE_BAN, ACCOUNT_STATUS_CANCELLED]
+        card_member:
+          type: string
+          nullable: true
+          description: Single ordinary member business ID for a Dashboard card preview.
+        card_name:
+          type: string
+          nullable: true
+          description: Explicit card paired with card_member, including restoration of the original name.
+        card_job_id:
+          type: string
+          nullable: true
+          description: Server-created caller-bound card preview ID for execute, stop or status.
+        group:
+          oneOf:
+            - type: string
+            - type: integer
+          nullable: true
+          description: Enabled business group ID for card preview.
+
         instance_id:
           type: string
         account:
@@ -5567,7 +5593,7 @@ components:
           writeOnly: true
         action:
           type: string
-          enum: [start, poll, login, request_sms, verify_sms, resend_sms, cancel, logout, groups, moderation_preview, moderation_execute, test_status, test_open, test_close]
+          enum: [start, poll, login, request_sms, verify_sms, resend_sms, cancel, logout, groups, moderation_preview, moderation_execute, test_status, test_open, test_close, card_preview, cleanup_preview, card_execute, card_status, card_stop]
         sender_instance:
           type: string
         groups:
@@ -5577,7 +5603,7 @@ components:
           type: array
           items:
             type: string
-            enum: [private_commands, group_commands, group_rules]
+            enum: [private_commands, private_ai, group_commands, group_rules]
         keywords:
           type: array
           items: { type: string }
@@ -5592,8 +5618,6 @@ components:
         operation_action:
           type: string
           enum: [mute, unmute, mute_all, unmute_all, announce]
-        group:
-          type: integer
         member:
           type: integer
         text:

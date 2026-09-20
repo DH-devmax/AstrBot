@@ -2,7 +2,17 @@
 
 from astrbot.core.platform.sources.wangshangliao.wire import ProtocolError
 
-ACTIONS = {"mute", "unmute", "announce", "mute_all", "unmute_all", "kick", "recall"}
+ACTIONS = {
+    "mute",
+    "unmute",
+    "announce",
+    "mute_all",
+    "unmute_all",
+    "kick",
+    "recall",
+    "rename",
+    "cleanup",
+}
 
 
 def validate_policy(policy: dict) -> None:
@@ -23,6 +33,7 @@ def validate_policy(policy: dict) -> None:
         "kick_keywords",
         "recall_enabled",
         "cooldown_seconds",
+        "card_auto",
     }:
         raise ValueError("moderation_config")
     if (
@@ -48,6 +59,20 @@ def validate_policy(policy: dict) -> None:
             or len(set(actions)) != len(actions)
         ):
             raise ValueError("moderation_permissions")
+    card_auto = policy.get("card_auto", {})
+    if (
+        not isinstance(card_auto, dict)
+        or len(card_auto) > 100
+        or any(
+            not isinstance(g, str)
+            or not g.isascii()
+            or not g.isdigit()
+            or int(g) <= 0
+            or type(enabled) is not bool
+            for g, enabled in card_auto.items()
+        )
+    ):
+        raise ValueError("card_auto_config")
     keywords = policy.get("keywords", [])
     for field in ("mute_keywords", "kick_keywords"):
         words = policy.get(field, [])

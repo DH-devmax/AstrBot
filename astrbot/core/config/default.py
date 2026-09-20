@@ -901,6 +901,12 @@ CONFIG_METADATA_2 = {
                         "type": "string",
                         "hint": "可选。钉钉互动卡片模板 ID。启用后将使用互动卡片进行流式回复。",
                     },
+                    "telegram_dedicated_reporting": {
+                        "description": "专用汇报机器人隔离",
+                        "type": "bool",
+                        "hint": "阻止消息进入通用插件和 AI。仅专用插件处理消息；专用插件停用时保持静默。",
+                        "show_key": True,
+                    },
                     "telegram_command_register": {
                         "description": "命令注册",
                         "type": "bool",

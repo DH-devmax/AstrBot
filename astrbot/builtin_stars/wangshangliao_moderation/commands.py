@@ -1,6 +1,7 @@
 """Administrator commands using native platform capabilities."""
 
 import hashlib
+import json
 import sqlite3
 import time
 
@@ -41,6 +42,11 @@ HELP = """【旺商聊群管帮助】
 /群管 结果 <操作ID>
 /群管 开发门禁
 
+【名片规范 · 私聊管理员】
+启用人格工具 wsl_private_management 后，可用自然语言请求批量预览。
+先选择群，核对预览，再发新消息明确执行；可查询进度或停止。
+名片动作授权与自动开关仍需到 Dashboard 逐群保存。
+
 【说明】
 群内只支持上述六项管理动作，不展示查询数据。
 动作仍需机器人群授权及平台权限。
@@ -69,6 +75,20 @@ class Commands:
         """
         action, _, argument = command.strip().partition(" ")
         argument = argument.strip()
+        return await self.execute(event, action, argument)
+
+    async def execute(self, event, action: str, argument: str, *, ai: bool = False):
+        """Dispatch validated arguments through the shared command service.
+
+        Args:
+            event: Authenticated native event.
+            action: Fixed command action.
+            argument: Action-specific value, never reparsed as a command.
+            ai: Whether to return structured mutation results and stable AI IDs.
+
+        Returns:
+            Query text or a structured AI mutation result.
+        """
         actions = {
             "禁言": "mute",
             "解禁": "unmute",
@@ -284,6 +304,27 @@ class Commands:
                 f"{adapter.account}/{event.unified_msg_origin}/{event.message_obj.message_id}".encode()
             ).hexdigest()
         )
+        if ai:
+            operation = (
+                "ai/"
+                + hashlib.sha256(
+                    json.dumps(
+                        [
+                            adapter.account,
+                            event.unified_msg_origin,
+                            event.message_obj.message_id,
+                            actions[action],
+                            group,
+                            member,
+                            argument if action == "公告" else "",
+                        ],
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ).encode()
+                ).hexdigest()
+            )
+        if not event.is_admin():
+            return "拒绝：管理员授权已撤销。"
         result = await adapter.execute_moderation(
             operation,
             actions[action],
@@ -291,6 +332,11 @@ class Commands:
             member,
             argument if action == "公告" else "",
         )
+        if ai:
+            return {
+                "status": result.get("status", "unknown"),
+                "operation_id": operation,
+            }
         status = {
             "accepted": "服务端已接受，尚未确认",
             "verified": "已确认",

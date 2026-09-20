@@ -348,6 +348,8 @@ class TelegramPlatformAdapter(Platform):
 
     def collect_commands(self) -> list[BotCommand]:
         """从注册的处理器中收集所有指令"""
+        if self.config.get("telegram_dedicated_reporting", False):
+            return []
         command_dict = {"start": "开始使用机器人"}
         skip_commands = {"start"}
 
@@ -357,6 +359,9 @@ class TelegramPlatformAdapter(Platform):
                 handler_metadata.handler_module_path not in star_map
                 or not star_map[handler_metadata.handler_module_path].activated
             ):
+                continue
+            supported = star_map[handler_metadata.handler_module_path].support_platforms
+            if supported and "telegram" not in supported:
                 continue
             if not handler_metadata.enabled:
                 continue
@@ -451,6 +456,8 @@ class TelegramPlatformAdapter(Platform):
     async def message_handler(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
+        if self.config.get("telegram_dedicated_reporting", False):
+            return
         logger.debug(f"Telegram message: {update.message}")
 
         # Handle media group messages

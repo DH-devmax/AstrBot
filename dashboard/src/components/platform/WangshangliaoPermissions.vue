@@ -3,7 +3,7 @@
     <v-divider />
     <h3 class="text-subtitle-1">{{ t('自动回复', 'Automatic replies') }}</h3>
     <v-switch :model-value="modelValue.reply_private !== false" @update:model-value="emit('update:modelValue', { ...modelValue, reply_private: !!$event })" :label="t('允许回复私聊', 'Allow private replies')" color="primary" hide-details inset />
-    <v-switch v-for="group in modelValue.enabled_groups || []" :key="group" :model-value="modelValue.reply_groups?.[group] !== false" @update:model-value="emit('update:modelValue', { ...modelValue, reply_groups: { ...modelValue.reply_groups, [group]: !!$event } })" :label="t('允许回复群内消息 · ', 'Allow group replies · ') + group" color="primary" hide-details inset />
+    <v-switch v-for="group in groups" :key="group.id" :model-value="modelValue.reply_groups?.[group.id] !== false" @update:model-value="emit('update:modelValue', { ...modelValue, reply_groups: { ...modelValue.reply_groups, [group.id]: !!$event } })" :label="t('允许回复群内消息 · ', 'Allow group replies · ') + group.name" color="primary" hide-details inset />
     <p class="text-caption text-medium-emphasis">{{ t('群聊开启回复后仍需明确 @ 机器人。关闭不删除会话或历史。', 'Group replies still require an explicit mention. Disabling preserves sessions and history.') }}</p>
     <v-divider />
     <h3 class="text-subtitle-1">{{ t('主动发送授权', 'Proactive sending') }}</h3>
@@ -17,10 +17,12 @@
     <h3 class="text-subtitle-1">{{ t('机器人群管授权', 'Bot moderation capabilities') }}</h3>
     <p class="text-body-2 text-medium-emphasis">{{ t('这里配置当前机器人在每个群可以执行的动作，不配置其他成员对机器人的控制权限。', 'Configure what this bot can do in each group. This does not configure who can control the bot.') }}</p>
     <v-switch :model-value="policy.enabled || false" @update:model-value="set('enabled', !!$event)" :label="t('启用机器人群管', 'Enable bot moderation')" color="primary" hide-details inset />
-    <v-select v-model="permissionGroup" :items="modelValue.enabled_groups || []" :label="t('选择授权群', 'Group')" variant="outlined" />
+    <v-select v-model="permissionGroup" :items="groups" item-title="name" item-value="id" :label="t('选择授权群', 'Group')" variant="outlined" />
     <v-alert v-if="!permissionGroup" type="info" variant="tonal">{{ t('请先在上方勾选启用群聊。', 'Enable a group above first.') }}</v-alert>
     <template v-if="permissionGroup">
       <v-checkbox v-for="item in actions" :key="item.value" :model-value="groupActions.includes(item.value)" @update:model-value="toggle(item.value, !!$event)" :label="item.title" hide-details density="compact" />
+      <v-switch :model-value="policy.card_auto[permissionGroup] === true" @update:model-value="set('card_auto', { ...policy.card_auto, [permissionGroup]: !!$event })" :label="t('自动规范本群普通成员名片', 'Automatically normalize ordinary member cards in this group')" color="primary" hide-details inset />
+      <p class="text-caption text-medium-emphasis">{{ t('默认关闭；需同时授权名片修改。开启后每五分钟检查完整目录，不调用 AI。请先保存配置。', 'Disabled by default; also requires card permission. Scans complete rosters every five minutes without AI. Save configuration first.') }}</p>
     </template>
     <v-text-field type="number" :model-value="policy.cooldown_seconds ?? 60" @update:model-value="set('cooldown_seconds', Number($event))" :label="t('每群处罚冷却（秒）', 'Per-group penalty cooldown (seconds)')" :min="10" :max="86400" variant="outlined" />
     <v-switch :model-value="policy.automation_enabled || false" @update:model-value="set('automation_enabled', !!$event)" :label="t('违规关键词规则', 'Violation keyword rules')" color="primary" hide-details inset />
@@ -36,14 +38,14 @@
 import { computed, ref, watch } from 'vue';
 import { sessionApi } from '@/api/v1';
 import { useI18n } from '@/i18n/composables';
-const props = defineProps<{ modelValue: Record<string, any> }>();
+const props = defineProps<{ modelValue: Record<string, any>; groups: Array<{ id: string; name: string }> }>();
 const emit = defineEmits(['update:modelValue']);
 const { locale } = useI18n();
 const t = (zh: string, en: string) => locale.value.startsWith('zh') ? zh : en;
 const privateTargets = ref<Array<{title: string; value: string}>>([]);
 const loadingTargets = ref(false);
 const targetError = ref('');
-const proactiveTargets = computed(() => [...(props.modelValue.enabled_groups || []).map((value: string) => ({ title: t('群 · ', 'Group · ') + value, value })), ...privateTargets.value]);
+const proactiveTargets = computed(() => [...props.groups.map(group => ({ title: t('群 · ', 'Group · ') + group.name, value: group.id })), ...privateTargets.value]);
 async function loadTargets() {
   const instance = props.modelValue.id;
   if (!instance) return;
@@ -67,7 +69,7 @@ async function loadTargets() {
 watch(() => props.modelValue.id, () => { privateTargets.value = []; void loadTargets(); }, {immediate: true});
 const policy = computed(() => {
   const old = props.modelValue.moderation || {};
-  return { enabled: old.enabled === true, permissions: Object.fromEntries(Object.entries(old.permissions || {}).filter(([key, value]) => /^\d+$/.test(key) && Array.isArray(value))), automation_enabled: old.automation_enabled === true, keywords: old.keywords || [], mute_keywords: old.mute_keywords ?? old.keywords ?? [], kick_keywords: old.kick_keywords || [], recall_enabled: old.recall_enabled === true, cooldown_seconds: old.cooldown_seconds ?? 60 };
+  return { card_auto: old.card_auto || {}, enabled: old.enabled === true, permissions: Object.fromEntries(Object.entries(old.permissions || {}).filter(([key, value]) => /^\d+$/.test(key) && Array.isArray(value))), automation_enabled: old.automation_enabled === true, keywords: old.keywords || [], mute_keywords: old.mute_keywords ?? old.keywords ?? [], kick_keywords: old.kick_keywords || [], recall_enabled: old.recall_enabled === true, cooldown_seconds: old.cooldown_seconds ?? 60 };
 });
 const permissionGroup = ref(props.modelValue.enabled_groups?.[0] || '');
 watch(() => [props.modelValue.id, ...(props.modelValue.enabled_groups || [])], () => { if (!(props.modelValue.enabled_groups || []).includes(permissionGroup.value)) permissionGroup.value = props.modelValue.enabled_groups?.[0] || ''; });
@@ -75,6 +77,8 @@ const groupActions = computed<string[]>(() => { const value = policy.value.permi
 const set = (key: string, value: any) => emit('update:modelValue', { ...props.modelValue, moderation: { ...policy.value, [key]: value } });
 const toggle = (action: string, enabled: boolean) => set('permissions', { ...policy.value.permissions, [permissionGroup.value]: enabled ? [...groupActions.value, action] : groupActions.value.filter((item: string) => item !== action) });
 const actions = computed(() => [
+  { value: 'cleanup', title: t('清理封禁／注销账号（移出群聊）', 'Remove banned / cancelled accounts') },
+  { value: 'rename', title: t('修改普通成员群名片', 'Rename ordinary member cards') },
   { value: 'mute', title: t('成员禁言', 'Mute member') },
   { value: 'kick', title: t('移除成员', 'Remove member') },
   { value: 'recall', title: t('撤回违规消息', 'Recall violation') },

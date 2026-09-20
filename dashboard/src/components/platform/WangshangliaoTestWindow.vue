@@ -3,7 +3,7 @@
     <v-divider />
     <h3 class="text-subtitle-1">{{ t('开发测试门禁', 'Developer test window') }}</h3>
     <v-select v-model="sender" :items="instances" item-title="id" item-value="id" :label="t('测试来源机器人', 'Source bot')" variant="outlined" />
-    <v-select v-model="groups" :items="enabledGroups" multiple chips :label="t('测试群', 'Test groups')" variant="outlined" />
+    <v-select v-model="groups" :items="groupOptions" item-title="name" item-value="id" multiple chips :label="t('测试群', 'Test groups')" variant="outlined" />
     <v-select v-model="scopes" :items="scopeOptions" multiple chips :label="t('测试范围', 'Scopes')" variant="outlined" />
     <v-combobox v-if="scopes.includes('group_rules')" v-model="keywords" multiple chips :label="t('WSL_TEST_ 专用关键词', 'WSL_TEST_ keywords')" variant="outlined" />
     <v-text-field v-model.number="seconds" type="number" :min="1" :max="300" :label="t('有效秒数', 'Lifetime seconds')" variant="outlined" />
@@ -21,7 +21,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { botApi } from '@/api/v1';
 import { useI18n } from '@/i18n/composables';
-const props = defineProps<{ instance: string; enabledGroups: string[]; draft?: Record<string, any> }>();
+const props = defineProps<{ instance: string; enabledGroups: string[]; groupOptions: Array<{ id: string; name: string }>; draft?: Record<string, any> }>();
 const emit = defineEmits(['update:draft']);
 const { locale } = useI18n();
 const t = (zh: string, en: string) => locale.value.startsWith('zh') ? zh : en;

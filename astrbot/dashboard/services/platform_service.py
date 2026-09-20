@@ -87,6 +87,55 @@ class PlatformService:
             try:
                 if not owner:
                     raise ProtocolError("dashboard_login_required")
+                if payload.get("action") in {
+                    "card_preview",
+                    "cleanup_preview",
+                    "card_execute",
+                    "card_status",
+                    "card_stop",
+                }:
+                    from astrbot.core.star import star_registry
+
+                    plugin = next(
+                        (
+                            entry.star_cls
+                            for entry in star_registry
+                            if entry.name == "wangshangliao_moderation"
+                            and entry.activated
+                            and entry.star_cls is not None
+                        ),
+                        None,
+                    )
+                    adapter = next(
+                        (
+                            p
+                            for p in self.platform_manager.platform_insts
+                            if p.meta().name == "wangshangliao"
+                            and p.meta().id == payload.get("instance_id")
+                        ),
+                        None,
+                    )
+                    if plugin is None or adapter is None:
+                        raise ProtocolError("card_service_unavailable")
+                    binding = "dashboard/" + owner
+                    action = payload["action"]
+                    if action in {"card_preview", "cleanup_preview"}:
+                        return await plugin.cards.preview(
+                            adapter,
+                            str(payload.get("group", "")),
+                            binding,
+                            member=payload.get("card_member"),
+                            card_name=payload.get("card_name"),
+                            cleanup=action == "cleanup_preview",
+                            cleanup_limit=payload.get("cleanup_limit"),
+                            cleanup_state=payload.get("cleanup_state"),
+                        )
+                    job_id = str(payload.get("card_job_id", ""))
+                    if action == "card_execute":
+                        return plugin.cards.start(adapter, job_id, binding)
+                    if action == "card_stop":
+                        return plugin.cards.stop(adapter, job_id, binding)
+                    return await plugin.cards.refresh_status(adapter, job_id, binding)
                 if payload.get("action") in {"test_status", "test_open", "test_close"}:
                     from astrbot.core.platform.sources.wangshangliao.test_window import (
                         TestWindow,

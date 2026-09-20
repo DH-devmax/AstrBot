@@ -206,3 +206,19 @@ async def group_directory(client, account: str) -> dict:
         "complete": False,
         "incomplete_reason": "platform_pagination_not_verified",
     }
+
+
+def member_card(member: dict) -> str:
+    """Read the raw group card without substituting the account nickname.
+
+    Args:
+        member: Verified platform member record.
+
+    Returns:
+        Exact card string, or an empty string for an unset card.
+    """
+    for key in ("groupMemberNick", "nick", "groupNick", "cardName"):
+        value = member.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    return ""
