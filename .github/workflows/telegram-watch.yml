@@ -21,7 +21,7 @@ jobs:
         run: cp -R integrations/telegram-chat-collector ../telegram-chat-collector
       - name: Install locked dependencies
         run: |
-          uv sync --dev --locked
+          uv sync --dev
           uv sync --project ../telegram-chat-collector --locked
       - name: Check and test
         run: |
